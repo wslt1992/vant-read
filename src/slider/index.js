@@ -77,10 +77,14 @@ export default createComponent({
       this.dragStatus = 'draging';
 
       const rect = this.$el.getBoundingClientRect();
+      // 是纵向的吗？如果是，就获取deltaY，如果不是，就获取deltaX
       const delta = this.vertical ? this.deltaY : this.deltaX;
+      // 是纵向的吗？如果是，就获取Rect的 高 ，如果不是，就获取宽
       const total = this.vertical ? rect.height : rect.width;
+      // slider显示的距离（像素差值） = 像素差值 * 范围
       const diff = (delta / total) * this.range;
 
+      // 新值 = touch开始值 + diff
       this.newValue = this.startValue + diff;
       this.updateValue(this.newValue);
     },
@@ -90,6 +94,7 @@ export default createComponent({
         return;
       }
 
+      // 只有托动过，才有新值newValue，所以设置newvalue到value
       if (this.dragStatus === 'draging') {
         this.updateValue(this.newValue, true);
         this.$emit('drag-end');
@@ -99,11 +104,13 @@ export default createComponent({
     },
 
     onClick(event) {
+      // 停止事件传播
       event.stopPropagation();
 
       if (this.disabled) return;
 
       const rect = this.$el.getBoundingClientRect();
+      // clientY-rect.top = 差值 理解，事件点距离屏幕窗口ClientY；当前div最上方 距离 窗口顶部的距离。
       const delta = this.vertical ? event.clientY - rect.top : event.clientX - rect.left;
       const total = this.vertical ? rect.height : rect.width;
       const value = (delta / total) * this.range + this.min;
@@ -115,10 +122,12 @@ export default createComponent({
     updateValue(value, end) {
       value = this.format(value);
 
+      // touch新的值 !== 上一次发送事件的值,那么发送input事件,发送新新值
       if (value !== this.value) {
         this.$emit('input', value);
       }
 
+      // 当touch结束，才发送change值。新值 !== touch开始的值
       if (end && value !== this.startValue) {
         this.$emit('change', value);
       }
