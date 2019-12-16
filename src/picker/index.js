@@ -214,15 +214,17 @@ export default createComponent({
   render(h) {
     const { itemHeight } = this;
     const wrapHeight = itemHeight * this.visibleItemCount;
-
+    // 单项目的高
     const frameStyle = {
       height: `${itemHeight}px`
     };
 
+    // 可见区域 列高的和
     const columnsStyle = {
       height: `${wrapHeight}px`
     };
 
+    // 模糊层宽高：高=（可见的总高-高亮区高itemHeight）的一半
     const maskStyle = {
       backgroundSize: `100% ${(wrapHeight - itemHeight) / 2}px`
     };

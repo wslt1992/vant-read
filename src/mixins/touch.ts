@@ -30,6 +30,7 @@ export const TouchMixin = Vue.extend({
   },
 
   methods: {
+    // 获取到开始点 x和y
     touchStart(event: TouchEvent) {
       this.resetTouchStatus();
       this.startX = event.touches[0].clientX;
