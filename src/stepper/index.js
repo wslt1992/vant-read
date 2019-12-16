@@ -11,14 +11,17 @@ function equal(value1, value2) {
   return String(value1) === String(value2);
 }
 
+// 浮点数运算bug。避免浮点数的加和乘
 // add num and avoid float number
 function add(num1, num2) {
+  // 这里表示10 的10 次方
   const cardinal = 10 ** 10;
   return Math.round((num1 + num2) * cardinal) / cardinal;
 }
 
 export default createComponent({
   props: {
+    // v-model 绑定的值
     value: null,
     integer: Boolean,
     disabled: Boolean,
@@ -45,6 +48,7 @@ export default createComponent({
       type: [Number, String],
       default: 1
     },
+    // 默认值
     defaultValue: {
       type: [Number, String],
       default: 1
@@ -60,23 +64,31 @@ export default createComponent({
   },
 
   data() {
+    // 如果有赋值，就不用默认值
     const defaultValue = isDef(this.value) ? this.value : this.defaultValue;
+    // 格式化值
     const value = this.format(defaultValue);
 
+    // 格式化的值，不等于 未格式化的值，发送事件给父组件
     if (!equal(value, this.value)) {
       this.$emit('input', value);
     }
 
     return {
+      // 当前值
       currentValue: value
     };
   },
 
   computed: {
+    // 禁用 - ：
+    // 1.外部全禁用  2.外部minus禁用 3. 当前值 小于等于 最小值
     minusDisabled() {
       return this.disabled || this.disableMinus || this.currentValue <= this.min;
     },
 
+    // 禁用 +：
+    // 1.外部全禁用  2.外部plus禁用 3. 当前值 大于等于 最大值
     plusDisabled() {
       return this.disabled || this.disablePlus || this.currentValue >= this.max;
     },
@@ -123,8 +135,9 @@ export default createComponent({
   methods: {
     // filter illegal characters
     filter(value) {
+      // 过滤非0-9
       value = String(value).replace(/[^0-9.-]/g, '');
-
+      // 是整数，有小数点，得到整数
       if (this.integer && value.indexOf('.') !== -1) {
         value = value.split('.')[0];
       }
@@ -133,12 +146,16 @@ export default createComponent({
     },
 
     format(value) {
+      // 过滤得到数字字符
       value = this.filter(value);
 
       // format range
       value = value === '' ? 0 : +value;
+      // 得到范围里面的值
+      // 大值里面取最小，小值里面得到最大的。得到限制范围里的值
       value = Math.max(Math.min(this.max, value), this.min);
 
+      // 四舍五入
       // format decimal
       if (isDef(this.decimalLength)) {
         value = value.toFixed(this.decimalLength);
@@ -169,28 +186,34 @@ export default createComponent({
 
       this.emitChange(formatted);
     },
-
+    // 同步变化，还是异步变化
     emitChange(value) {
       if (this.asyncChange) {
+        // 异步变化，将得到的新值通知给父组件，然后等待父组件重新设置v-model:value。在组件内监听value的变化，设置currentValue
         this.$emit('input', value);
         this.$emit('change', value, { name: this.name });
       } else {
+        // 同步变化
         this.currentValue = value;
       }
     },
-
+    // 根据 点击的按钮type，运算新值
     onChange() {
       const { type } = this;
 
+      // 如果该按钮被禁用，则跳过
       if (this[`${type}Disabled`]) {
         this.$emit('overlimit', type);
         return;
       }
 
+      // 确定 值的正负
       const diff = type === 'minus' ? -this.step : +this.step;
 
+      // 运算，格式化
       const value = this.format(add(+this.currentValue, diff));
 
+      // 通知父组件
       this.emitChange(value);
       this.$emit(type);
     },
@@ -208,6 +231,7 @@ export default createComponent({
       resetScroll();
     },
 
+    // 这是连续的 定时器，LONG_PRESS_INTERVAL=200
     longPressStep() {
       this.longPressTimer = setTimeout(() => {
         this.onChange(this.type);
@@ -219,6 +243,7 @@ export default createComponent({
       clearTimeout(this.longPressTimer);
       this.isLongPress = false;
 
+      // 这是开始时 定时器，时间间隔LONG_PRESS_START_TIME=600
       this.longPressTimer = setTimeout(() => {
         this.isLongPress = true;
         this.onChange();
@@ -227,8 +252,10 @@ export default createComponent({
     },
 
     onTouchEnd(event) {
+      // 清理 定时器
       clearTimeout(this.longPressTimer);
 
+      // 阻止按钮click事件响应
       if (this.isLongPress) {
         preventDefault(event);
       }
